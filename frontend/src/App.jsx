@@ -2,6 +2,7 @@ import { useState } from 'react';
 import BlogForm from './components/BlogForm.jsx';
 import BlogList from './components/BlogList.jsx';
 import Notification from './components/Notification.jsx';
+import ApiSettings from './components/ApiSettings.jsx';
 import { useBlogs } from './hooks/useBlogs.js';
 import './App.css';
 
@@ -14,9 +15,14 @@ function App() {
     updateBlog,
     deleteBlog,
     refresh,
+    baseUrl,
+    availableBaseUrls,
+    setApiBaseUrl,
+    customBaseUrl,
   } = useBlogs();
   const [editingBlog, setEditingBlog] = useState(null);
   const [message, setMessage] = useState(null);
+  const [showSettings, setShowSettings] = useState(false);
 
   const handleCreate = async (blog) => {
     const result = await createBlog(blog);
@@ -71,6 +77,21 @@ function App() {
     refresh();
   };
 
+  const handleApplyApiUrl = (value) => {
+    setApiBaseUrl(value);
+    setMessage({
+      type: 'success',
+      text: value
+        ? `Se utilizará la API en ${value}.`
+        : 'Se restableció la detección automática de la API.',
+    });
+    setShowSettings(false);
+  };
+
+  const handleResetApiUrl = () => {
+    handleApplyApiUrl(null);
+  };
+
   return (
     <div className="app-container">
       <header className="header">
@@ -78,6 +99,19 @@ function App() {
         <p className="subtitle">
           Panel de administración para gestionar los blogs de tu API ASP.NET.
         </p>
+        <div className="header-actions">
+          <button
+            type="button"
+            className="secondary"
+            onClick={() => setShowSettings((prev) => !prev)}
+            disabled={loading}
+          >
+            {showSettings ? 'Cerrar configuración' : 'Configurar API'}
+          </button>
+          {baseUrl && (
+            <span className="active-base-url">Conectado a: {baseUrl}</span>
+          )}
+        </div>
       </header>
 
       <main className="content">
@@ -116,6 +150,17 @@ function App() {
             />
           </div>
         </section>
+
+        {showSettings && (
+          <ApiSettings
+            baseUrl={baseUrl}
+            customBaseUrl={customBaseUrl}
+            availableBaseUrls={availableBaseUrls}
+            onApply={handleApplyApiUrl}
+            onReset={handleResetApiUrl}
+            loading={loading}
+          />
+        )}
       </main>
 
       {message && (

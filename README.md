@@ -35,7 +35,7 @@ Ambas aplicaciones pueden convivir sin conflicto en este repositorio siempre que
 
 > **Nota:** la API está configurada para aceptar solicitudes desde `http://localhost:3000` mediante la directiva CORS `AllowReactApp`. Si decides cambiar el puerto del frontend, actualiza también la política en `Program.cs`.
 
-Por defecto la API expone HTTP en `http://localhost:5000` y HTTPS en `https://localhost:5001`. El frontend probará automáticamente varias URL típicas de ASP.NET (5000/5001, 7050 y 7262) y recordará la primera que funcione. Si utilizas otros puertos o dominios, configura manualmente la URL como se describe más adelante.
+Por defecto la API expone HTTP en `http://localhost:5000` y HTTPS en `https://localhost:5001`. El frontend intentará conectarse primero mediante HTTPS (`https://localhost:5001`) y, si no es posible, volverá a intentar la petición usando HTTP (`http://localhost:5000`). Si utilizas otros puertos o dominios, actualiza la configuración descrita a continuación.
 
 ## Puesta en marcha del frontend
 
@@ -49,22 +49,17 @@ Por defecto la API expone HTTP en `http://localhost:5000` y HTTPS en `https://lo
    npm run dev
    ```
 
-La aplicación abrirá el panel en `http://localhost:3000`. Todas las llamadas a `/api/*` se proxyarán automáticamente hacia la API en `http://localhost:5000`, por lo que no tendrás que preocuparte por CORS durante el desarrollo local. Si tu API corre en otra dirección, crea un archivo `.env` en `frontend/` con la variable `VITE_DEV_PROXY_TARGET` para indicarla (por ejemplo `VITE_DEV_PROXY_TARGET=https://localhost:7050`).
+La aplicación abrirá el panel en `http://localhost:3000`.
 
-### Configurar la URL de la API
+### Variables de entorno
 
-Tienes dos opciones para indicar la dirección de tu API:
+La URL base de la API puede personalizarse creando un archivo `.env` en la carpeta `frontend` con la siguiente variable:
 
-1. **Desde el panel:** pulsa el botón **Configurar API** (esquina superior del panel) y escribe la URL base que necesites. El valor se guardará en el navegador y puedes volver a la detección automática en cualquier momento.
-2. **Mediante variable de entorno:** crea un archivo `.env` en la carpeta `frontend` con la siguiente variable:
+```bash
+VITE_API_BASE_URL=http://localhost:5000
+```
 
-   ```bash
-   VITE_API_BASE_URL=https://localhost:5001
-   ```
-
-   Esta opción es útil cuando quieres compartir una configuración fija con el equipo.
-
-Si ninguna de las opciones anteriores está definida, el frontend probará primero el mismo origen desde el que se sirve (ideal cuando publicas el frontend junto a la API o usas el proxy de desarrollo) y, si falla, recorrerá automáticamente las URL por defecto mencionadas arriba.
+Si no se define, el frontend probará automáticamente primero con `https://localhost:5001` y, si falla, usará `http://localhost:5000`. En caso de que la API se ejecute en otra dirección o puerto, define explícitamente la variable para apuntar al endpoint correcto.
 
 ## Características del frontend
 

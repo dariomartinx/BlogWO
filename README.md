@@ -35,7 +35,7 @@ Ambas aplicaciones pueden convivir sin conflicto en este repositorio siempre que
 
 > **Nota:** la API está configurada para aceptar solicitudes desde `http://localhost:3000` mediante la directiva CORS `AllowReactApp`. Si decides cambiar el puerto del frontend, actualiza también la política en `Program.cs`.
 
-Por defecto la API expone HTTP en `http://localhost:5000` y HTTPS en `https://localhost:5001`. Asegúrate de que estos endpoints coincidan con la URL configurada en el frontend.
+Por defecto la API expone HTTP en `http://localhost:5000` y HTTPS en `https://localhost:5001`. El frontend intentará conectarse primero mediante HTTPS (`https://localhost:5001`) y, si no es posible, volverá a intentar la petición usando HTTP (`http://localhost:5000`). Si utilizas otros puertos o dominios, actualiza la configuración descrita a continuación.
 
 ## Puesta en marcha del frontend
 
@@ -59,7 +59,7 @@ La URL base de la API puede personalizarse creando un archivo `.env` en la carpe
 VITE_API_BASE_URL=http://localhost:5000
 ```
 
-Si no se define, el frontend utilizará `http://localhost:5000` por defecto. En caso de que la API se ejecute en HTTPS, actualiza la variable para reflejar la URL segura (`https://localhost:5001`).
+Si no se define, el frontend probará automáticamente primero con `https://localhost:5001` y, si falla, usará `http://localhost:5000`. En caso de que la API se ejecute en otra dirección o puerto, define explícitamente la variable para apuntar al endpoint correcto.
 
 ## Características del frontend
 

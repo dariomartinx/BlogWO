@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-const DEFAULT_API_BASE_URL = 'http://localhost:5000';
+const DEFAULT_API_BASE_URLS = ['https://localhost:5001', 'http://localhost:5000'];
 
-const getApiBaseUrl = () => {
+const normalizeUrl = (url) => url.replace(/\/$/, '');
+
+const getApiBaseUrls = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (envUrl && typeof envUrl === 'string') {
-    return envUrl.replace(/\/$/, '');
+    return [normalizeUrl(envUrl)];
   }
-  return DEFAULT_API_BASE_URL;
+  return DEFAULT_API_BASE_URLS.map(normalizeUrl);
 };
 
 const normalizeBlog = (blog) => ({
@@ -19,13 +21,51 @@ export const useBlogs = () => {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const baseUrl = useMemo(() => getApiBaseUrl(), []);
+  const baseUrlOptions = useMemo(() => getApiBaseUrls(), []);
+  const [baseUrl, setBaseUrl] = useState(() => baseUrlOptions[0]);
+
+  const request = useCallback(
+    async (path, options = {}) => {
+      const attempts = [
+        baseUrl,
+        ...baseUrlOptions.filter((candidate) => candidate !== baseUrl),
+      ].filter(Boolean);
+
+      let lastError = null;
+
+      for (const candidate of attempts) {
+        try {
+          const init = (() => {
+            if (!options) return undefined;
+            const { body, headers, ...rest } = options;
+            const prepared = {
+              ...rest,
+              headers: headers ? { ...headers } : undefined,
+            };
+            if (typeof body !== 'undefined') {
+              prepared.body = body;
+            }
+            return prepared;
+          })();
+
+          const response = await fetch(`${candidate}${path}`, init);
+          setBaseUrl(candidate);
+          return response;
+        } catch (err) {
+          lastError = err;
+        }
+      }
+
+      throw lastError || new Error('No se pudo conectar con la API.');
+    },
+    [baseUrl, baseUrlOptions]
+  );
 
   const fetchBlogs = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch(`${baseUrl}/api/blogs`);
+      const response = await request('/api/blogs');
       if (!response.ok) {
         throw new Error(`Estado ${response.status}`);
       }
@@ -37,7 +77,7 @@ export const useBlogs = () => {
     } finally {
       setLoading(false);
     }
-  }, [baseUrl]);
+  }, [request]);
 
   useEffect(() => {
     fetchBlogs();
@@ -47,7 +87,7 @@ export const useBlogs = () => {
     async (blog) => {
       try {
         setLoading(true);
-        const response = await fetch(`${baseUrl}/api/blogs`, {
+        const response = await request('/api/blogs', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -65,14 +105,14 @@ export const useBlogs = () => {
         setLoading(false);
       }
     },
-    [baseUrl, fetchBlogs]
+    [request, fetchBlogs]
   );
 
   const updateBlog = useCallback(
     async (id, blog) => {
       try {
         setLoading(true);
-        const response = await fetch(`${baseUrl}/api/blogs/${id}`, {
+        const response = await request(`/api/blogs/${id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -90,14 +130,14 @@ export const useBlogs = () => {
         setLoading(false);
       }
     },
-    [baseUrl, fetchBlogs]
+    [request, fetchBlogs]
   );
 
   const deleteBlog = useCallback(
     async (id) => {
       try {
         setLoading(true);
-        const response = await fetch(`${baseUrl}/api/blogs/${id}`, {
+        const response = await request(`/api/blogs/${id}`, {
           method: 'DELETE',
         });
         if (!response.ok) {
@@ -111,7 +151,7 @@ export const useBlogs = () => {
         setLoading(false);
       }
     },
-    [baseUrl, fetchBlogs]
+    [request, fetchBlogs]
   );
 
   return {

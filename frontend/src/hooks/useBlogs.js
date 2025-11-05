@@ -16,6 +16,10 @@ const unique = (values) => [...new Set(values.filter(isPresent))];
 
 const normalizeUrl = (url) => url.replace(/\/$/, '');
 
+const RETRIABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+const RETRIABLE_STATUS_CODES = new Set([500, 502, 503, 504]);
+
 const getApiBaseUrls = () => {
   const envUrl = import.meta.env.VITE_API_BASE_URL;
   if (typeof envUrl === 'string') {
@@ -98,9 +102,12 @@ export const useBlogs = () => {
         ),
       ].filter(isPresent);
 
+      const method = (options?.method || 'GET').toUpperCase();
       let lastError = null;
+      let lastResponse = null;
 
-      for (const candidate of attempts) {
+      for (let index = 0; index < attempts.length; index += 1) {
+        const candidate = attempts[index];
         try {
           const init = (() => {
             if (!options) return undefined;
@@ -115,12 +122,32 @@ export const useBlogs = () => {
             return prepared;
           })();
 
-          const response = await fetch(`${candidate}${path}`, init);
-          setBaseUrl(candidate);
-          return response;
+          const url = candidate ? `${candidate}${path}` : path;
+          const response = await fetch(url, init);
+          const hasMoreCandidates = index < attempts.length - 1;
+
+          const shouldRetry =
+            hasMoreCandidates &&
+            RETRIABLE_METHODS.has(method) &&
+            RETRIABLE_STATUS_CODES.has(response.status);
+
+          if (!shouldRetry) {
+            setBaseUrl(candidate);
+            return response;
+          }
+
+          lastResponse = response;
         } catch (err) {
           lastError = err;
         }
+      }
+
+      if (lastResponse) {
+        const lastCandidate = attempts[attempts.length - 1];
+        if (isPresent(lastCandidate)) {
+          setBaseUrl(lastCandidate);
+        }
+        return lastResponse;
       }
 
       throw lastError || new Error('No se pudo conectar con la API.');

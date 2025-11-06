@@ -35,7 +35,7 @@ Ambas aplicaciones pueden convivir sin conflicto en este repositorio siempre que
 
 > **Nota:** la API está configurada para aceptar solicitudes desde `http://localhost:3000` mediante la directiva CORS `AllowReactApp`. Si decides cambiar el puerto del frontend, actualiza también la política en `Program.cs`.
 
-Por defecto la API expone HTTP en `http://localhost:5000` y HTTPS en `https://localhost:5001`. El frontend intentará detectar automáticamente los puertos definidos en `backend/Properties/launchSettings.json` (toma el primero con HTTPS y, si no existe, usa HTTP) y además probará varias URL típicas de ASP.NET (5000/5001, 7050 y 7262), recordando la primera que funcione. Si utilizas otros puertos o dominios, configura manualmente la URL como se describe más adelante.
+Por defecto la API expone HTTP en `http://localhost:5000` y HTTPS en `https://localhost:5001`. El frontend rastrea automáticamente cualquier archivo `launchSettings.json` dentro de la carpeta `backend/` (sin importar el nivel de anidación) para detectar los puertos configurados por ASP.NET, priorizando HTTPS y, si no existe, usando HTTP. Además, probará varias URL típicas de ASP.NET (5000/5001, 7050 y 7262), recordando la primera que funcione. Si utilizas otros puertos o dominios, configura manualmente la URL como se describe más adelante.
 
 ## Puesta en marcha del frontend
 

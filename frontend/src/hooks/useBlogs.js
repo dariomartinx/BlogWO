@@ -1,7 +1,29 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
 const STORAGE_KEY = 'blogwo.apiBaseUrl';
-const DEFAULT_API_BASE_URLS = [
+
+const isPresent = (value) => value !== null && value !== undefined;
+
+const unique = (values) => [...new Set(values.filter(isPresent))];
+
+const normalizeUrl = (url) => url.replace(/\/$/, '');
+
+const parseKnownApiBaseUrls = () => {
+  const envValue = import.meta.env.VITE_KNOWN_API_URLS;
+  if (typeof envValue !== 'string') {
+    return [];
+  }
+
+  return unique(
+    envValue
+      .split(',')
+      .map((item) => item.trim())
+      .filter(Boolean)
+      .map(normalizeUrl),
+  );
+};
+
+const FALLBACK_API_BASE_URLS = [
   'https://localhost:5001',
   'http://localhost:5000',
   'https://localhost:7050',
@@ -10,11 +32,10 @@ const DEFAULT_API_BASE_URLS = [
   'http://localhost:7262',
 ];
 
-const isPresent = (value) => value !== null && value !== undefined;
-
-const unique = (values) => [...new Set(values.filter(isPresent))];
-
-const normalizeUrl = (url) => url.replace(/\/$/, '');
+const DEFAULT_API_BASE_URLS = unique([
+  ...parseKnownApiBaseUrls(),
+  ...FALLBACK_API_BASE_URLS,
+]);
 
 const RETRIABLE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 

@@ -3,14 +3,3 @@ node_modules
 dist
 .env
 
-# Visual Studio
-.vs/
-*.suo
-*.user
-*.cache
-*.db
-*.sqlite
-
-# Build
-bin/
-obj/

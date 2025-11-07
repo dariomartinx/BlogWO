@@ -6,7 +6,10 @@ const emptyForm = {
   author: '',
 };
 
+// Formulario para crear/editar un Blog
+// Recibe onSumbit de App, para mandar el Blog
 const BlogForm = ({ initialValues, onSubmit, onCancel, loading }) => {
+  // Gestión de estados internos
   const [values, setValues] = useState(emptyForm);
 
   useEffect(() => {

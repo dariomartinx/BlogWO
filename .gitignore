@@ -1,0 +1,21 @@
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.cache
+*.db
+*.sqlite
+
+# .NET build
+bin/
+obj/
+
+# Frontend (Vite/Node)
+frontend/node_modules/
+frontend/dist/
+frontend/.env
+frontend/package-lock.json
+
+# macOS / Windows
+.DS_Store
+Thumbs.db

@@ -65,6 +65,7 @@ const getApiBaseUrls = () => {
 const loadStoredBaseUrl = () => {
   if (typeof window === 'undefined') return null;
   try {
+    // Guarda la URL de la API en local
     const stored = window.localStorage.getItem(STORAGE_KEY);
     return stored !== null ? normalizeUrl(stored) : null;
   } catch (err) {
@@ -91,6 +92,7 @@ const normalizeBlog = (blog) => ({
   createdAt: blog.createdAt ? new Date(blog.createdAt) : null,
 });
 
+// Para gestionar los estados
 export const useBlogs = () => {
   const [blogs, setBlogs] = useState([]);
   const [loading, setLoading] = useState(true);

@@ -6,6 +6,7 @@ import ApiSettings from './components/ApiSettings.jsx';
 import { useBlogs } from './hooks/useBlogs.js';
 import './App.css';
 
+// Componente principal
 function App() {
   const {
     blogs,
@@ -20,10 +21,12 @@ function App() {
     setApiBaseUrl,
     customBaseUrl,
   } = useBlogs();
+  // Estados locales
   const [editingBlog, setEditingBlog] = useState(null);
   const [message, setMessage] = useState(null);
   const [showSettings, setShowSettings] = useState(false);
 
+  // A partir de aquí es para mostrar la interfaz principal
   const handleCreate = async (blog) => {
     const result = await createBlog(blog);
     if (result.success) {
@@ -93,12 +96,10 @@ function App() {
   };
 
   return (
+    // HTML para mostrar las diferentes secciones
     <div className="app-container">
       <header className="header">
         <h1>BlogWO</h1>
-        <p className="subtitle">
-          Panel de administración para gestionar los blogs de tu API ASP.NET.
-        </p>
         <div className="header-actions">
           <button
             type="button"

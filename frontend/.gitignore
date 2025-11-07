@@ -2,3 +2,15 @@ node_modules
 .DS_Store
 dist
 .env
+
+# Visual Studio
+.vs/
+*.suo
+*.user
+*.cache
+*.db
+*.sqlite
+
+# Build
+bin/
+obj/

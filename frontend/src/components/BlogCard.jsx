@@ -8,6 +8,7 @@ const formatDate = (date) => {
   }).format(date);
 };
 
+// Targeta visual de cada Blog, con 2 botones, para editar/borrar
 const BlogCard = ({ blog, onEdit, onDelete }) => {
   return (
     <li className="blog-card">
@@ -23,6 +24,7 @@ const BlogCard = ({ blog, onEdit, onDelete }) => {
         <p className="blog-meta">Creado: {formatDate(blog.createdAt)}</p>
       </div>
       <div className="card-actions">
+        // Boton para editar
         <button type="button" className="secondary" onClick={() => onEdit(blog)}>
           Editar
         </button>

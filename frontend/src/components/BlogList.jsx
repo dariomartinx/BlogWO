@@ -1,7 +1,9 @@
 import PropTypes from 'prop-types';
 import BlogCard from './BlogCard.jsx';
 
+// Componente para mostrar la lista completa de Blogs
 const BlogList = ({ blogs, loading, onEdit, onDelete }) => {
+  // Si loading == true, muestra lista
   if (loading) {
     return <div className="loading">Cargando blogs…</div>;
   }
@@ -24,6 +26,7 @@ const BlogList = ({ blogs, loading, onEdit, onDelete }) => {
 };
 
 BlogList.propTypes = {
+  // Recorre el array de Blogs, mostrando sus caracteristicas
   blogs: PropTypes.arrayOf(
     PropTypes.shape({
       blogId: PropTypes.number.isRequired,

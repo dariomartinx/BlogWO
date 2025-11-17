@@ -1,19 +1,61 @@
-# Starter pipeline
-# Start with a minimal pipeline that you can customize to build and deploy your code.
-# Add steps that build, run tests, deploy, and more:
-# https://aka.ms/yaml
-
-trigger:
-- main
+﻿trigger:
+  branches:
+    include:
+      - develop
 
 pool:
-  vmImage: ubuntu-latest
+  vmImage: 'ubuntu-latest'
+
+variables:
+  buildConfiguration: 'Release'
+  projectDir: 'backend/BlogApi'
+  frontendDir: 'frontend'
+  publishDir: 'backend/BlogApi/publish'
 
 steps:
-- script: echo Hello, world!
-  displayName: 'Run a one-line script'
+# 1) Instalar .NET 9 SDK
+- task: UseDotNet@2
+  inputs:
+    packageType: 'sdk'
+    version: '9.x'
+  displayName: 'Install .NET 9 SDK'
+
+# 2) Build del frontend Vite/React
+- task: NodeTool@0
+  inputs:
+    versionSpec: '18.x'
+  displayName: 'Install Node.js'
 
 - script: |
-    echo Add other tasks to build, test, and deploy your project.
-    echo See https://aka.ms/yaml
-  displayName: 'Run a multi-line script'
+    cd $(frontendDir)
+    npm install
+    npm run build
+  displayName: 'Build React frontend'
+
+# 3) Copiar frontend → wwwroot del backend
+- script: |
+    rm -rf $(projectDir)/wwwroot/*
+    cp -R $(frontendDir)/dist/* $(projectDir)/wwwroot/
+  displayName: 'Copy frontend build to wwwroot'
+
+# 4) Restaurar y compilar backend
+- script: |
+    dotnet restore $(projectDir)
+    dotnet build $(projectDir) --configuration $(buildConfiguration)
+  displayName: 'Build .NET backend'
+
+# 5) Publicar backend (.NET 9 self-contained Linux)
+- script: |
+    dotnet publish $(projectDir) \
+      --configuration $(buildConfiguration) \
+      --runtime linux-x64 \
+      --self-contained true \
+      -o $(publishDir)
+  displayName: 'Publish .NET self-contained linux-x64'
+
+# 6) Publicar artefactos
+- task: PublishBuildArtifacts@1
+  inputs:
+    PathtoPublish: '$(publishDir)'
+    ArtifactName: 'drop'
+    publishLocation: 'Container'

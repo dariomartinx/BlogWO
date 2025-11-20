@@ -5,33 +5,33 @@ pool:
   vmImage: ubuntu-latest
 
 steps:
-# 1️⃣ Restaurar paquetes backend .NET
+# Restaurar paquetes backend .NET
 - task: DotNetCoreCLI@2
   inputs:
     command: 'restore'
     projects: 'backend/BlogApi/BlogApi.csproj'
 
-# 2️⃣ Compilar backend
+# Compilar backend
 - task: DotNetCoreCLI@2
   inputs:
     command: 'build'
     projects: 'backend/BlogApi/BlogApi.csproj'
     arguments: '--configuration Release'
 
-# 3️⃣ Preparar Node para el frontend
+# Preparar Node para el frontend
 - task: NodeTool@0
   inputs:
     versionSpec: '18.x'
   displayName: 'Instalar Node.js'
 
-# 4️⃣ Build del frontend (React + Vite)
+# Build del frontend (React + Vite)
 - script: |
     cd frontend
     npm install
     npm run build
   displayName: 'Build Frontend React'
 
-# 5️⃣ Copiar el build del frontend al backend/wwwroot
+# Copiar el build del frontend al backend/wwwroot
 - task: CopyFiles@2
   inputs:
     SourceFolder: 'frontend/dist'
@@ -39,7 +39,7 @@ steps:
     TargetFolder: 'backend/BlogApi/wwwroot'
   displayName: 'Copiar React → Backend/wwwroot'
 
-# 6️⃣ Publicar el backend como artefacto listo para Azure App Service
+# Publicar el backend como artefacto listo para Azure App Service
 - task: DotNetCoreCLI@2
   inputs:
     command: 'publish'
@@ -47,7 +47,7 @@ steps:
     projects: 'backend/BlogApi/BlogApi.csproj'
     arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
 
-# 7️⃣ Subir artefacto para la Release Pipeline
+# Subir artefacto para la Release Pipeline
 - task: PublishBuildArtifacts@1
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'

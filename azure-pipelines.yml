@@ -4,56 +4,70 @@
 pool:
   vmImage: ubuntu-latest
 
+variables:
+  buildConfiguration: 'Release'
+
 steps:
-# === BACKEND ===
-- task: DotNetCoreCLI@2
-  displayName: "Restore backend"
-  inputs:
-    command: restore
-    projects: "backend/BlogApi/BlogApi.csproj"
 
-- task: DotNetCoreCLI@2
-  displayName: "Build backend"
-  inputs:
-    command: build
-    projects: "backend/BlogApi/BlogApi.csproj"
+# FRONTEND ----------------------------------------------------
 
-- task: DotNetCoreCLI@2
-  displayName: "Publish backend"
+- task: NodeTool@0
   inputs:
-    command: publish
-    publishWebProjects: false
-    projects: "backend/BlogApi/BlogApi.csproj"
-    arguments: "--configuration Release --output $(Build.ArtifactStagingDirectory)/backend"
+    versionSpec: '18.x'
+  displayName: 'Install Node.js'
 
-# === FRONTEND ===
 - script: |
     cd frontend
     npm install
     npm run build
-  displayName: "Build frontend"
+  displayName: 'Build frontend (React)'
 
-# Copy frontend output
-- task: CopyFiles@2
-  displayName: "Copy frontend dist"
+# BACKEND -----------------------------------------------------
+
+- task: DotNetCoreCLI@2
+  displayName: 'Restore backend'
   inputs:
-    SourceFolder: "frontend/dist"
-    Contents: "**"
-    TargetFolder: "$(Build.ArtifactStagingDirectory)/frontend"
+    command: 'restore'
+    projects: 'backend/BlogApi/BlogApi.csproj'
 
-# === CREATE ZIP PACKAGE ===
+- task: DotNetCoreCLI@2
+  displayName: 'Build backend'
+  inputs:
+    command: 'build'
+    projects: 'backend/BlogApi/BlogApi.csproj'
+    arguments: '--configuration $(buildConfiguration)'
+
+- task: DotNetCoreCLI@2
+  displayName: 'Publish backend'
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: 'backend/BlogApi/BlogApi.csproj'
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)/publish'
+
+# COPY FRONTEND DIST INTO BACKEND PUBLISH ---------------------
+
+- script: |
+    mkdir $(Build.ArtifactStagingDirectory)/publish/wwwroot
+    cp -R frontend/dist/* $(Build.ArtifactStagingDirectory)/publish/wwwroot/
+  displayName: 'Embed React build into backend publish folder'
+
+# PACKAGE -----------------------------------------------------
+
 - task: ArchiveFiles@2
-  displayName: "Create deployment ZIP"
   inputs:
-    rootFolderOrFile: "$(Build.ArtifactStagingDirectory)"
+    rootFolderOrFile: "$(Build.ArtifactStagingDirectory)/publish"
     includeRootFolder: false
-    archiveType: zip
+    archiveType: "zip"
     archiveFile: "$(Build.ArtifactStagingDirectory)/app.zip"
     replaceExistingArchive: true
+  displayName: 'Create deployment ZIP (app.zip)'
 
-# === PUBLISH ARTIFACT ===
+# PUBLISH ARTIFACT -------------------------------------------
+
 - task: PublishBuildArtifacts@1
-  displayName: "Publish artifact"
   inputs:
     PathtoPublish: "$(Build.ArtifactStagingDirectory)"
     ArtifactName: "drop"
+    publishLocation: "Container"
+  displayName: 'Publish Artifact drop'

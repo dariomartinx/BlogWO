@@ -4,62 +4,56 @@
 pool:
   vmImage: ubuntu-latest
 
-variables:
-  buildConfiguration: 'Release'
-
 steps:
-# 1) Restaurar dependencias backend
+# === BACKEND ===
 - task: DotNetCoreCLI@2
-  displayName: Restore backend
+  displayName: "Restore backend"
   inputs:
-    command: 'restore'
-    projects: 'backend/BlogApi/BlogApi.csproj'
+    command: restore
+    projects: "backend/BlogApi/BlogApi.csproj"
 
-# 2) Compilar backend
 - task: DotNetCoreCLI@2
-  displayName: Build backend
+  displayName: "Build backend"
   inputs:
-    command: 'build'
-    projects: 'backend/BlogApi/BlogApi.csproj'
-    arguments: '--configuration $(buildConfiguration)'
+    command: build
+    projects: "backend/BlogApi/BlogApi.csproj"
 
-# 3) Instalar Node
-- task: UseNode@1
-  displayName: Install Node
+- task: DotNetCoreCLI@2
+  displayName: "Publish backend"
   inputs:
-    version: '18.x'
+    command: publish
+    publishWebProjects: false
+    projects: "backend/BlogApi/BlogApi.csproj"
+    arguments: "--configuration Release --output $(Build.ArtifactStagingDirectory)/backend"
 
-# 4) Instalar dependencias frontend
+# === FRONTEND ===
 - script: |
     cd frontend
     npm install
-  displayName: Install frontend dependencies
-
-# 5) Compilar frontend (genera /dist)
-- script: |
-    cd frontend
     npm run build
-  displayName: Build frontend
+  displayName: "Build frontend"
 
-# 6) Copiar /dist dentro del backend para servirlo desde wwwroot
+# Copy frontend output
 - task: CopyFiles@2
-  displayName: Copy frontend dist to backend
+  displayName: "Copy frontend dist"
   inputs:
-    SourceFolder: 'frontend/dist'
-    TargetFolder: 'backend/BlogApi/wwwroot'
-    overwrite: true
+    SourceFolder: "frontend/dist"
+    Contents: "**"
+    TargetFolder: "$(Build.ArtifactStagingDirectory)/frontend"
 
-# 7) Publicar artefactos para Release Pipeline
-- task: DotNetCoreCLI@2
-  displayName: Publish backend
+# === CREATE ZIP PACKAGE ===
+- task: ArchiveFiles@2
+  displayName: "Create deployment ZIP"
   inputs:
-    command: 'publish'
-    projects: 'backend/BlogApi/BlogApi.csproj'
-    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
-    publishWebProjects: false
+    rootFolderOrFile: "$(Build.ArtifactStagingDirectory)"
+    includeRootFolder: false
+    archiveType: zip
+    archiveFile: "$(Build.ArtifactStagingDirectory)/app.zip"
+    replaceExistingArchive: true
 
+# === PUBLISH ARTIFACT ===
 - task: PublishBuildArtifacts@1
-  displayName: Publish artifact
+  displayName: "Publish artifact"
   inputs:
-    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
-    ArtifactName: 'drop'
+    PathtoPublish: "$(Build.ArtifactStagingDirectory)"
+    ArtifactName: "drop"

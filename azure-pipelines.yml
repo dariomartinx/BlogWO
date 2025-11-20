@@ -1,61 +1,54 @@
 ﻿trigger:
-  branches:
-    include:
-      - develop
+- main
 
 pool:
-  vmImage: 'ubuntu-latest'
-
-variables:
-  buildConfiguration: 'Release'
-  projectDir: 'backend/BlogApi'
-  frontendDir: 'frontend'
-  publishDir: 'backend/BlogApi/publish'
+  vmImage: ubuntu-latest
 
 steps:
-# 1) Instalar .NET 9 SDK
-- task: UseDotNet@2
+# 1️⃣ Restaurar paquetes backend .NET
+- task: DotNetCoreCLI@2
   inputs:
-    packageType: 'sdk'
-    version: '9.x'
-  displayName: 'Install .NET 9 SDK'
+    command: 'restore'
+    projects: 'backend/BlogApi/BlogApi.csproj'
 
-# 2) Build del frontend Vite/React
+# 2️⃣ Compilar backend
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'build'
+    projects: 'backend/BlogApi/BlogApi.csproj'
+    arguments: '--configuration Release'
+
+# 3️⃣ Preparar Node para el frontend
 - task: NodeTool@0
   inputs:
     versionSpec: '18.x'
-  displayName: 'Install Node.js'
+  displayName: 'Instalar Node.js'
 
+# 4️⃣ Build del frontend (React + Vite)
 - script: |
-    cd $(frontendDir)
+    cd frontend
     npm install
     npm run build
-  displayName: 'Build React frontend'
+  displayName: 'Build Frontend React'
 
-# 3) Copiar frontend → wwwroot del backend
-- script: |
-    rm -rf $(projectDir)/wwwroot/*
-    cp -R $(frontendDir)/dist/* $(projectDir)/wwwroot/
-  displayName: 'Copy frontend build to wwwroot'
+# 5️⃣ Copiar el build del frontend al backend/wwwroot
+- task: CopyFiles@2
+  inputs:
+    SourceFolder: 'frontend/dist'
+    Contents: '**'
+    TargetFolder: 'backend/BlogApi/wwwroot'
+  displayName: 'Copiar React → Backend/wwwroot'
 
-# 4) Restaurar y compilar backend
-- script: |
-    dotnet restore $(projectDir)
-    dotnet build $(projectDir) --configuration $(buildConfiguration)
-  displayName: 'Build .NET backend'
+# 6️⃣ Publicar el backend como artefacto listo para Azure App Service
+- task: DotNetCoreCLI@2
+  inputs:
+    command: 'publish'
+    publishWebProjects: false
+    projects: 'backend/BlogApi/BlogApi.csproj'
+    arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
 
-# 5) Publicar backend (.NET 9 self-contained Linux)
-- script: |
-    dotnet publish $(projectDir) \
-      --configuration $(buildConfiguration) \
-      --runtime linux-x64 \
-      --self-contained true \
-      -o $(publishDir)
-  displayName: 'Publish .NET self-contained linux-x64'
-
-# 6) Publicar artefactos
+# 7️⃣ Subir artefacto para la Release Pipeline
 - task: PublishBuildArtifacts@1
   inputs:
-    PathtoPublish: '$(publishDir)'
+    PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'drop'
-    publishLocation: 'Container'

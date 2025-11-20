@@ -4,51 +4,62 @@
 pool:
   vmImage: ubuntu-latest
 
+variables:
+  buildConfiguration: 'Release'
+
 steps:
-# Restaurar paquetes backend .NET
+# 1) Restaurar dependencias backend
 - task: DotNetCoreCLI@2
+  displayName: Restore backend
   inputs:
     command: 'restore'
     projects: 'backend/BlogApi/BlogApi.csproj'
 
-# Compilar backend
+# 2) Compilar backend
 - task: DotNetCoreCLI@2
+  displayName: Build backend
   inputs:
     command: 'build'
     projects: 'backend/BlogApi/BlogApi.csproj'
-    arguments: '--configuration Release'
+    arguments: '--configuration $(buildConfiguration)'
 
-# Preparar Node para el frontend
-- task: NodeTool@0
+# 3) Instalar Node
+- task: UseNode@1
+  displayName: Install Node
   inputs:
-    versionSpec: '18.x'
-  displayName: 'Instalar Node.js'
+    version: '18.x'
 
-# Build del frontend (React + Vite)
+# 4) Instalar dependencias frontend
 - script: |
     cd frontend
     npm install
-    npm run build
-  displayName: 'Build Frontend React'
+  displayName: Install frontend dependencies
 
-# Copiar el build del frontend al backend/wwwroot
+# 5) Compilar frontend (genera /dist)
+- script: |
+    cd frontend
+    npm run build
+  displayName: Build frontend
+
+# 6) Copiar /dist dentro del backend para servirlo desde wwwroot
 - task: CopyFiles@2
+  displayName: Copy frontend dist to backend
   inputs:
     SourceFolder: 'frontend/dist'
-    Contents: '**'
     TargetFolder: 'backend/BlogApi/wwwroot'
-  displayName: 'Copiar React → Backend/wwwroot'
+    overwrite: true
 
-# Publicar el backend como artefacto listo para Azure App Service
+# 7) Publicar artefactos para Release Pipeline
 - task: DotNetCoreCLI@2
+  displayName: Publish backend
   inputs:
     command: 'publish'
-    publishWebProjects: false
     projects: 'backend/BlogApi/BlogApi.csproj'
-    arguments: '--configuration Release --output $(Build.ArtifactStagingDirectory)'
+    arguments: '--configuration $(buildConfiguration) --output $(Build.ArtifactStagingDirectory)'
+    publishWebProjects: false
 
-# Subir artefacto para la Release Pipeline
 - task: PublishBuildArtifacts@1
+  displayName: Publish artifact
   inputs:
     PathtoPublish: '$(Build.ArtifactStagingDirectory)'
     ArtifactName: 'drop'
